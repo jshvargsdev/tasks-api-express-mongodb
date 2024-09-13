@@ -1,11 +1,9 @@
-import Task from '../models/task.model.js'
+import * as taskService from '../services/tasks.service.js'
 
 export async function getAllTask(req, res) {
   try {
-    const tasks = await Task.find({ user: req.user.id })
-
+    const tasks = await taskService.getAllTasks(req.user.id)
     if (tasks.length === 0) return res.status(200).json([])
-
     res.status(200).json(tasks)
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -14,18 +12,14 @@ export async function getAllTask(req, res) {
 
 export async function createTask(req, res) {
   const { title, description, date } = req.body
-
   try {
-    const newTask = new Task({
+    const newTask = await taskService.createTask({
       title,
       description,
       date,
-      user: req.user.id
+      userId: req.user.id
     })
-
-    const savedTask = await newTask.save()
-
-    res.status(201).json(savedTask)
+    res.status(201).json(newTask)
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
@@ -33,12 +27,9 @@ export async function createTask(req, res) {
 
 export async function getTask(req, res) {
   const { id } = req.params
-
   try {
-    const task = await Task.findById(id)
-
+    const task = await taskService.getTaskById(id)
     if (!task) return res.status(404).json({ error: 'Task not found' })
-
     res.status(200).json(task)
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -47,13 +38,12 @@ export async function getTask(req, res) {
 
 export async function updateTask(req, res) {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
-      new: true
-    })
-
-    if (!task) return res.status(404).json({ error: 'Task not found' })
-
-    res.status(200).json(task)
+    const updatedTask = await taskService.updateTaskById(
+      req.params.id,
+      req.body
+    )
+    if (!updatedTask) return res.status(404).json({ error: 'Task not found' })
+    res.status(200).json(updatedTask)
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
@@ -61,14 +51,10 @@ export async function updateTask(req, res) {
 
 export async function deleteTask(req, res) {
   const { id } = req.params
-
   try {
-    const taskFound = await Task.findById(id)
-    if (!taskFound) return res.status(404).json({ error: 'Task not found' })
-
-    await Task.findByIdAndDelete(id)
-
-    res.status(204)
+    const deletedTask = await taskService.deleteTaskById(id)
+    if (!deletedTask) return res.status(404).json({ error: 'Task not found' })
+    res.status(204).send()
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
